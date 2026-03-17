@@ -86,6 +86,7 @@ pub fn run() {
             hotkey::register_hotkey,
             hotkey::unregister_hotkey,
             hotkey::get_current_hotkey,
+            ui::update_tray_state,
             // Settings commands
             settings::get_settings,
             settings::update_settings,
