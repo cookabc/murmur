@@ -1,5 +1,6 @@
 # Rust
 /target/
+/voice-core/target/
 **/*.rs.bk
 *.pdb
 
@@ -22,6 +23,15 @@ yarn-error.log*
 *.swp
 *.swo
 *~
+
+# Swift
+.build/
+.swiftpm/
+Package.resolved
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
 
 # Settings
 .voice-input-mac/
