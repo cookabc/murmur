@@ -1,6 +1,6 @@
 # Voice Input for macOS
 
-A menu bar voice input application for macOS using local speech recognition. Press a global hotkey to start recording, transcribe your voice, and automatically paste the text into any application.
+A local voice input tool for macOS that works like a lightweight speech input method. Press a global hotkey to start recording, transcribe your voice locally, and insert the text into the current application.
 
 ![Screenshot](https://github.com/YOUR_USERNAME/voice-input-mac/raw/main/screenshot.png)
 
@@ -99,7 +99,7 @@ voice-input-mac/
 - **Audio Recording**: Uses ffmpeg to record audio from the default microphone
 - **Speech Recognition**: Calls `coli asr` CLI for local transcription
 - **Clipboard**: Uses pbcopy/pbpaste and osascript for cross-app pasting
-- **Hotkey**: Uses Tauri's global-shortcut plugin
+- **Hotkey**: Uses Tauri's global-shortcut plugin for global speech input triggering
 - **Storage**: JSON file in `~/.voice-input-mac/settings.json`
 
 ### Frontend (Vanilla JavaScript)
@@ -107,6 +107,11 @@ voice-input-mac/
 - No framework dependencies
 - Lightweight and fast
 - Compatible with Tauri 2's invoke/listen APIs
+
+## Internal Docs
+
+- [Reverse Product Spec (ZH-CN)](docs/product-spec.zh-CN.md)
+- [Technical Assessment and Refactor Plan (ZH-CN)](docs/technical-assessment.zh-CN.md)
 
 ## License
 

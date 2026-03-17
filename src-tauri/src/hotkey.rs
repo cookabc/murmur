@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
+use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HotkeyConfig {
@@ -27,20 +28,86 @@ impl HotkeyManager {
         }
     }
 
+    fn normalize_accelerator(accelerator: &str) -> String {
+        accelerator
+            .split('+')
+            .map(|part| match part.trim().to_ascii_lowercase().as_str() {
+                "cmd" | "command" => "Command".to_string(),
+                "cmdorctrl" | "commandorcontrol" | "commandorctrl" => {
+                    "CommandOrControl".to_string()
+                }
+                "ctrl" | "control" => "Control".to_string(),
+                "shift" => "Shift".to_string(),
+                "alt" | "option" => "Alt".to_string(),
+                "super" => "Super".to_string(),
+                "space" => "Space".to_string(),
+                key if key.len() == 1 => key.to_ascii_uppercase(),
+                key => {
+                    let mut chars = key.chars();
+                    match chars.next() {
+                        Some(first) => format!("{}{}", first.to_ascii_uppercase(), chars.as_str()),
+                        None => String::new(),
+                    }
+                }
+            })
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("+")
+    }
+
     pub fn register_hotkey(
         &mut self,
         app_handle: &AppHandle,
         accelerator: &str,
     ) -> Result<(), String> {
-        // For now, we'll just track the hotkey string
-        // The actual hotkey registration will be done in tauri.conf.json
-        // or through the global-shortcut plugin's static configuration
-        self.current_hotkey = Some(accelerator.to_string());
-        eprintln!("Hotkey registered: {}", accelerator);
-        Ok(())
+        let normalized = Self::normalize_accelerator(accelerator);
+
+        if self.current_hotkey.as_deref() == Some(normalized.as_str()) {
+            return Ok(());
+        }
+
+        let previous = self.current_hotkey.clone();
+
+        if let Some(existing) = previous.as_deref() {
+            if app_handle.global_shortcut().is_registered(existing) {
+                app_handle
+                    .global_shortcut()
+                    .unregister(existing)
+                    .map_err(|e| format!("Failed to unregister existing hotkey: {}", e))?;
+            }
+        }
+
+        match app_handle.global_shortcut().register(&normalized) {
+            Ok(_) => {
+                self.current_hotkey = Some(normalized.clone());
+                eprintln!("Hotkey registered: {}", normalized);
+                Ok(())
+            }
+            Err(e) => {
+                if let Some(existing) = previous {
+                    let _ = app_handle.global_shortcut().register(&existing);
+                    self.current_hotkey = Some(existing);
+                }
+
+                Err(format!("Failed to register hotkey '{}': {}", normalized, e))
+            }
+        }
     }
 
-    pub fn unregister_hotkey(&mut self, _app_handle: &AppHandle) -> Result<(), String> {
+    pub fn set_current_hotkey(&mut self, accelerator: String) {
+        self.current_hotkey = Some(Self::normalize_accelerator(&accelerator));
+    }
+
+    pub fn unregister_hotkey(&mut self, app_handle: &AppHandle) -> Result<(), String> {
+        if let Some(accelerator) = self.current_hotkey.as_deref() {
+            if app_handle.global_shortcut().is_registered(accelerator) {
+                app_handle
+                    .global_shortcut()
+                    .unregister(accelerator)
+                    .map_err(|e| format!("Failed to unregister hotkey: {}", e))?;
+            }
+        }
+
         self.current_hotkey = None;
         Ok(())
     }
@@ -56,15 +123,14 @@ impl Default for HotkeyManager {
     }
 }
 
-// Tauri commands
 #[tauri::command]
 pub fn register_hotkey(
     accelerator: String,
     state: tauri::State<'_, std::sync::Mutex<HotkeyManager>>,
-    _app_handle: AppHandle,
+    app_handle: AppHandle,
 ) -> Result<(), String> {
     let mut manager = state.lock().map_err(|e| e.to_string())?;
-    manager.register_hotkey(&_app_handle, &accelerator)
+    manager.register_hotkey(&app_handle, &accelerator)
 }
 
 #[tauri::command]

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
 use std::path::PathBuf;
 use std::fs;
 use std::sync::Mutex;

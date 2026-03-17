@@ -11,38 +11,56 @@ mod settings;
 use audio::AudioRecorder;
 use asr::AsrClient;
 use hotkey::HotkeyManager;
-use settings::{AppSettings, HistoryEntry, SettingsManager};
+use settings::SettingsManager;
 use std::sync::Arc;
-use tauri::{Emitter, Listener, Manager, State, AppHandle};
+use tauri::{Emitter, Manager};
+use tauri_plugin_global_shortcut::ShortcutState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let settings_manager = SettingsManager::new();
+    let initial_hotkey = settings_manager
+        .load_settings()
+        .unwrap_or_default()
+        .hotkey;
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        let _ = app.emit("hotkey-pressed", shortcut.to_string());
+                    }
+                })
+                .build(),
+        )
         .setup(|app| {
             // Initialize state
             app.manage(AudioRecorder::new());
             app.manage(Arc::new(std::sync::Mutex::new(AsrClient::default())));
-            app.manage(std::sync::Mutex::new(HotkeyManager::new()));
-            app.manage(Arc::new(std::sync::Mutex::new(SettingsManager::new())));
+            let mut hotkey_manager = HotkeyManager::new();
+            if let Err(error) = hotkey_manager.register_hotkey(&app.handle().clone(), &initial_hotkey)
+            {
+                eprintln!("Failed to restore hotkey '{}': {}", initial_hotkey, error);
+                hotkey_manager.register_hotkey(&app.handle().clone(), "Command+Shift+V")?;
+            }
+            app.manage(std::sync::Mutex::new(hotkey_manager));
+            app.manage(Arc::new(std::sync::Mutex::new(settings_manager)));
 
-            // Listen for hotkey events
+            let window = app.get_webview_window("main").ok_or("Main window is missing")?;
             let app_handle_for_hotkey = app.handle().clone();
-            app.listen("hotkey-pressed", move |_| {
-                eprintln!("Hotkey pressed, toggling recording window");
+            app.listen_global("hotkey-pressed", move |_| {
+                eprintln!("Hotkey pressed, toggling recording state");
 
                 if let Some(window) = app_handle_for_hotkey.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        let _ = window.hide();
-                    } else {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                        // Emit event to frontend to start/stop recording
-                        let _ = window.emit("toggle-recording", ());
-                    }
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.emit("toggle-recording", ());
                 }
             });
+
+            let _ = window.hide();
 
             Ok(())
         })

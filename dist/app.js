@@ -368,10 +368,15 @@ async function saveSettings() {
     };
 
     try {
+        await invokeCmd('register_hotkey', { accelerator: newSettings.hotkey });
         await invokeCmd('update_settings', { settings: newSettings });
         state.settings = newSettings;
+        if (elements.hotkey) {
+            elements.hotkey.value = newSettings.hotkey;
+        }
         showSaveNotification();
     } catch (error) {
+        console.error('Failed to save settings:', error);
         showSaveError(error);
     }
 }
@@ -440,7 +445,15 @@ function setupEventListeners() {
     elements.saveSettingsBtn?.addEventListener('click', saveSettings);
 
     elements.changeHotkeyBtn?.addEventListener('click', () => {
-        alert('Press the new hotkey combination...\n\n(Note: Hotkey editing is not fully implemented yet)');
+        const currentValue = elements.hotkey?.value || 'Cmd+Shift+V';
+        const nextValue = prompt(
+            'Enter a global hotkey, for example Cmd+Shift+V or Command+Shift+V',
+            currentValue,
+        );
+
+        if (nextValue && elements.hotkey) {
+            elements.hotkey.value = nextValue.trim();
+        }
     });
 
     // History
