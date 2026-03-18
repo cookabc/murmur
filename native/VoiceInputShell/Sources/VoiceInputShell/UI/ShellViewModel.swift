@@ -4,8 +4,8 @@ import Foundation
 final class ShellViewModel: ObservableObject {
     var onRequestDismiss: (() -> Void)?
 
-    @Published var title = "Swift shell ready"
-    @Published var detail = "The menu bar shell is live. Checking the local Rust runtime and bundled helpers."
+    @Published var title = "Voice Input"
+    @Published var detail = "Checking the dictation engine…"
     @Published var rustVersion = "—"
     @Published var runtimeBadge = "Checking"
     @Published var ffmpegLine = "ffmpeg unresolved"
@@ -34,7 +34,7 @@ final class ShellViewModel: ObservableObject {
             return "Capture is live. Stop when you're ready to transcribe."
         }
 
-        return isReady ? "Capture a short clip, then transcribe and paste it." : "Fix runtime tools first, then start dictation."
+        return isReady ? "Record a short clip, then transcribe and paste it." : "Engine isn’t ready yet — click Refresh to retry."
     }
 
     var canStartRecording: Bool {
@@ -64,18 +64,18 @@ final class ShellViewModel: ObservableObject {
             let recording = try bridge.isRecording()
             rustVersion = bridge.version()
             runtimeBadge = summary.ffmpegExists && summary.coliExists ? "Ready" : "Needs setup"
-            title = summary.ffmpegExists && summary.coliExists ? "Voice input is ready" : "Runtime needs attention"
+            title = summary.ffmpegExists && summary.coliExists ? "Ready to dictate" : "Setup required"
             detail = summary.ffmpegExists && summary.coliExists
-                ? "Local capture and transcription helpers are available. Record, transcribe, then paste into the frontmost app."
-                : "The shell loaded the Rust core, but one or more helper tools still need attention before dictation is fully ready."
+                ? "Record a clip, then transcribe and paste it into any app."
+                : "Install ffmpeg and coli, then click Refresh."
             ffmpegLine = statusLine(name: "ffmpeg", path: summary.ffmpegPath, available: summary.ffmpegExists)
             coliLine = statusLine(name: "coli", path: summary.coliPath, available: summary.coliExists)
             recordingLine = recording ? "Recording live" : "Ready to record"
             actionError = ""
         } catch {
             runtimeBadge = "Offline"
-            title = "Rust core unavailable"
-            detail = error.localizedDescription
+            title = "Engine unavailable"
+            detail = "The dictation engine couldn’t load. Check the app is complete, then click Refresh."
             ffmpegLine = "ffmpeg unresolved"
             coliLine = "coli unresolved"
             recordingLine = "Unavailable"

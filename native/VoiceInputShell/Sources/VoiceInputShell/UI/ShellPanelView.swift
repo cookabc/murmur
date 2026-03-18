@@ -115,14 +115,19 @@ struct ShellPanelView: View {
                 .background(panelSurfaceStrong.opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 if !viewModel.recordingPath.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Latest clip")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundStyle(panelMuted)
-                        Text(viewModel.recordingPath)
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(panelText.opacity(0.9))
-                            .lineLimit(3)
+                    HStack(spacing: 10) {
+                        Image(systemName: "waveform.badge.mic")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(panelAccentSoft)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Clip recorded")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(panelText)
+                            Text(URL(fileURLWithPath: viewModel.recordingPath).lastPathComponent)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(panelMuted)
+                        }
+                        Spacer()
                     }
                     .padding(14)
                     .background(panelSurface.opacity(0.88), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
