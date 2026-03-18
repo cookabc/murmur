@@ -1,8 +1,8 @@
 mod audio;
+mod asr;
 
 use serde::Serialize;
 use std::ffi::{c_char, CStr, CString};
-use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock, RwLock};
 
 const CORE_NAME: &str = "voice-input-core";
@@ -23,6 +23,8 @@ struct SmokeStatus {
     ffmpeg_exists: bool,
     coli_exists: bool,
 }
+
+pub use asr::TranscriptionResult;
 
 static TOOL_PATHS: OnceLock<RwLock<ToolPaths>> = OnceLock::new();
 static LAST_ERROR: OnceLock<Mutex<Option<String>>> = OnceLock::new();
@@ -52,10 +54,6 @@ fn optional_string_from_ptr(value: *const c_char) -> Option<String> {
     } else {
         Some(string)
     }
-}
-
-fn path_exists(path: Option<&String>) -> bool {
-    path.map(PathBuf::from).is_some_and(|value| value.exists())
 }
 
 fn set_last_error_message(message: impl Into<String>) {
@@ -124,6 +122,20 @@ pub fn check_ffmpeg_available() -> bool {
     audio::check_ffmpeg_available(configured_ffmpeg_path())
 }
 
+pub fn check_coli_available() -> bool {
+    asr::check_coli_available(configured_coli_path())
+}
+
+pub fn transcribe_audio(
+    audio_path: impl AsRef<std::path::Path>,
+    model: Option<String>,
+    polish: Option<bool>,
+) -> Result<TranscriptionResult, String> {
+    asr::transcribe_audio(configured_coli_path(), audio_path.as_ref(), model, polish)
+        .inspect(|_| clear_last_error_message())
+        .inspect_err(|error| set_last_error_message(error.clone()))
+}
+
 #[no_mangle]
 pub extern "C" fn voice_input_core_version() -> *mut c_char {
     c_string_from(CORE_VERSION.to_string())
@@ -150,8 +162,8 @@ pub extern "C" fn voice_input_core_smoke_status_json() -> *mut c_char {
     let status = SmokeStatus {
         name: CORE_NAME,
         version: CORE_VERSION,
-        ffmpeg_exists: path_exists(tool_paths.ffmpeg_path.as_ref()),
-        coli_exists: path_exists(tool_paths.coli_path.as_ref()),
+        ffmpeg_exists: check_ffmpeg_available(),
+        coli_exists: check_coli_available(),
         ffmpeg_path: tool_paths.ffmpeg_path,
         coli_path: tool_paths.coli_path,
     };
@@ -180,6 +192,25 @@ pub extern "C" fn voice_input_core_stop_recording() -> bool {
 #[no_mangle]
 pub extern "C" fn voice_input_core_is_recording() -> bool {
     is_recording()
+}
+
+#[no_mangle]
+pub extern "C" fn voice_input_core_transcribe_audio(
+    audio_path: *const c_char,
+    model: *const c_char,
+    polish: bool,
+) -> *mut c_char {
+    let Some(audio_path) = optional_string_from_ptr(audio_path) else {
+        set_last_error_message("Audio path is required");
+        return std::ptr::null_mut();
+    };
+
+    match transcribe_audio(audio_path, optional_string_from_ptr(model), Some(polish)) {
+        Ok(result) => c_string_from(
+            serde_json::to_string(&result).expect("serialize transcription result"),
+        ),
+        Err(_) => std::ptr::null_mut(),
+    }
 }
 
 #[no_mangle]
@@ -212,4 +243,5 @@ mod tests {
         configure_tool_paths(None, None);
         assert!(last_error_message().is_none());
     }
+
 }

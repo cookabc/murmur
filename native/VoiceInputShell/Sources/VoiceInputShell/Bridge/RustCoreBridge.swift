@@ -8,6 +8,7 @@ typealias VoiceCoreLastErrorFn = @convention(c) () -> UnsafeMutablePointer<CChar
 typealias VoiceCoreStartRecordingFn = @convention(c) () -> UnsafeMutablePointer<CChar>?
 typealias VoiceCoreStopRecordingFn = @convention(c) () -> Bool
 typealias VoiceCoreIsRecordingFn = @convention(c) () -> Bool
+typealias VoiceCoreTranscribeAudioFn = @convention(c) (UnsafePointer<CChar>?, UnsafePointer<CChar>?, Bool) -> UnsafeMutablePointer<CChar>?
 typealias VoiceCoreStringFreeFn = @convention(c) (UnsafeMutablePointer<CChar>?) -> Void
 
 struct RustSmokeStatus: Decodable {
@@ -17,6 +18,12 @@ struct RustSmokeStatus: Decodable {
     let coliPath: String?
     let ffmpegExists: Bool
     let coliExists: Bool
+}
+
+struct RustTranscriptionResult: Decodable {
+    let text: String
+    let lang: String?
+    let duration: Double?
 }
 
 enum RustCoreBridgeError: Error {
@@ -49,6 +56,7 @@ final class RustCoreBridge {
     private let startRecordingFn: VoiceCoreStartRecordingFn
     private let stopRecordingFn: VoiceCoreStopRecordingFn
     private let isRecordingFn: VoiceCoreIsRecordingFn
+    private let transcribeAudioFn: VoiceCoreTranscribeAudioFn
     private let stringFreeFn: VoiceCoreStringFreeFn
 
     private init() {
@@ -65,6 +73,7 @@ final class RustCoreBridge {
         startRecordingFn = RustCoreBridge.loadSymbol(handle: handle, name: "voice_input_core_start_recording")
         stopRecordingFn = RustCoreBridge.loadSymbol(handle: handle, name: "voice_input_core_stop_recording")
         isRecordingFn = RustCoreBridge.loadSymbol(handle: handle, name: "voice_input_core_is_recording")
+        transcribeAudioFn = RustCoreBridge.loadSymbol(handle: handle, name: "voice_input_core_transcribe_audio")
         stringFreeFn = RustCoreBridge.loadSymbol(handle: handle, name: "voice_input_core_string_free")
     }
 
@@ -115,6 +124,22 @@ final class RustCoreBridge {
 
         guard stopRecordingFn() else {
             throw RustCoreBridgeError.callFailed(lastErrorMessage())
+        }
+    }
+
+    func transcribeAudio(at audioPath: String, model: String = "sensevoice", polish: Bool = true) throws -> RustTranscriptionResult {
+        try configureHelperPaths()
+
+        return try audioPath.withCString { audioPathPtr in
+            try model.withCString { modelPtr in
+                guard let raw = transcribeAudioFn(audioPathPtr, modelPtr, polish) else {
+                    throw RustCoreBridgeError.callFailed(lastErrorMessage())
+                }
+
+                defer { stringFreeFn(raw) }
+                let data = Data(bytes: raw, count: strlen(raw))
+                return try JSONDecoder().decode(RustTranscriptionResult.self, from: data)
+            }
         }
     }
 

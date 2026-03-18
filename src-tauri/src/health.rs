@@ -1,4 +1,3 @@
-use crate::asr::AsrClient;
 use crate::audio;
 use serde::Serialize;
 use std::process::Command;
@@ -49,7 +48,7 @@ fn build_runtime_health(
 #[tauri::command]
 pub fn get_runtime_health() -> RuntimeHealth {
     let ffmpeg_available = audio::check_ffmpeg_available();
-    let coli_available = AsrClient::check_availability();
+    let coli_available = voice_input_core::check_coli_available();
     let osascript_available = command_available("osascript");
 
     build_runtime_health(ffmpeg_available, coli_available, osascript_available)

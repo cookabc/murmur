@@ -10,6 +10,8 @@ final class ShellViewModel: ObservableObject {
     @Published var recordingLine = "Idle"
     @Published var recordingPath = ""
     @Published var actionError = ""
+    @Published var transcriptText = ""
+    @Published var transcriptMeta = ""
 
     func refreshRuntime() {
         do {
@@ -29,6 +31,7 @@ final class ShellViewModel: ObservableObject {
             ffmpegLine = "ffmpeg: unresolved"
             coliLine = "coli: unresolved"
             recordingLine = "Unavailable"
+            transcriptMeta = ""
         }
     }
 
@@ -38,6 +41,8 @@ final class ShellViewModel: ObservableObject {
             recordingPath = path
             recordingLine = "Recording"
             actionError = ""
+            transcriptText = ""
+            transcriptMeta = ""
             detail = "Recording from the menu bar shell through the shared Rust core. Stop recording to flush the wav file for the next ASR step."
         } catch {
             actionError = error.localizedDescription
@@ -56,6 +61,32 @@ final class ShellViewModel: ObservableObject {
         } catch {
             actionError = error.localizedDescription
             recordingLine = "Stop failed"
+        }
+    }
+
+    func transcribeLatestRecording() {
+        guard !recordingPath.isEmpty else {
+            actionError = "No completed recording available to transcribe yet."
+            return
+        }
+
+        do {
+            let result = try RustCoreBridge.shared.transcribeAudio(at: recordingPath)
+            transcriptText = result.text
+
+            var metaParts = [String]()
+            if let lang = result.lang, !lang.isEmpty {
+                metaParts.append("lang: \(lang)")
+            }
+            if let duration = result.duration {
+                metaParts.append(String(format: "audio: %.1fs", duration))
+            }
+
+            transcriptMeta = metaParts.joined(separator: "  |  ")
+            actionError = ""
+            detail = "Transcription completed through the shared Rust core."
+        } catch {
+            actionError = error.localizedDescription
         }
     }
 }

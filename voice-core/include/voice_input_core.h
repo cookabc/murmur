@@ -14,6 +14,7 @@ char *voice_input_core_last_error_message(void);
 char *voice_input_core_start_recording(void);
 bool voice_input_core_stop_recording(void);
 bool voice_input_core_is_recording(void);
+char *voice_input_core_transcribe_audio(const char *audio_path, const char *model, bool polish);
 void voice_input_core_string_free(char *value);
 
 #ifdef __cplusplus

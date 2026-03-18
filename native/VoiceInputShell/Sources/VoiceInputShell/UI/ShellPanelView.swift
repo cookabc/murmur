@@ -52,6 +52,26 @@ struct ShellPanelView: View {
                     .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
+            if !viewModel.transcriptText.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Transcript")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+
+                    Text(viewModel.transcriptText)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .textSelection(.enabled)
+
+                    if !viewModel.transcriptMeta.isEmpty {
+                        Text(viewModel.transcriptMeta)
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(14)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+
             Spacer()
 
             HStack(spacing: 10) {
@@ -62,6 +82,11 @@ struct ShellPanelView: View {
 
                 Button("Stop") {
                     viewModel.stopRecording()
+                }
+                .buttonStyle(.bordered)
+
+                Button("Transcribe") {
+                    viewModel.transcribeLatestRecording()
                 }
                 .buttonStyle(.bordered)
 
