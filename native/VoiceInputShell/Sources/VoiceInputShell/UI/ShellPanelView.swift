@@ -12,6 +12,12 @@ struct ShellPanelView: View {
     private let panelAccentSoft = Color(red: 0.31, green: 0.52, blue: 0.49)
     private let panelDanger = Color(red: 0.75, green: 0.36, blue: 0.27)
 
+    private var heroTint: Color {
+        if viewModel.isRecordingActive { return panelDanger }
+        if viewModel.isReady { return panelAccent }
+        return panelSurfaceStrong
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -37,9 +43,10 @@ struct ShellPanelView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Voice Input")
                             .font(.system(size: 26, weight: .bold, design: .rounded))
-                        Text("A compact local dictation panel for the menu bar")
+                        Text("On-device dictation for the menu bar")
                             .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(panelMuted)
+                            .lineLimit(2)
                     }
 
                     Spacer()
@@ -101,7 +108,7 @@ struct ShellPanelView: View {
                         .padding(.vertical, 18)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(viewModel.isRecordingActive ? panelDanger : panelAccent)
+                    .tint(heroTint)
                     .disabled(!viewModel.canStartRecording && !viewModel.canStopRecording)
                 }
                 .padding(16)
@@ -188,10 +195,6 @@ struct ShellPanelView: View {
                         actionButton(title: "Refresh", systemImage: "arrow.clockwise", tint: panelAccentSoft) {
                             viewModel.refreshRuntime()
                         }
-
-                        actionButton(title: "Project", systemImage: "folder", tint: panelAccentSoft) {
-                            NSWorkspace.shared.open(URL(fileURLWithPath: FileManager.default.currentDirectoryPath))
-                        }
                     }
                 }
 
@@ -204,9 +207,11 @@ struct ShellPanelView: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
-                Text(viewModel.diagnosticsExpanded ? viewModel.diagnosticsSummary : "Status is available on demand so the panel stays focused on dictation.")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(panelMuted)
+                if viewModel.diagnosticsExpanded {
+                    Text(viewModel.diagnosticsSummary)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(panelMuted)
+                }
             }
             .padding(18)
         }

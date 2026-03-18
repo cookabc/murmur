@@ -6,7 +6,7 @@ final class ShellViewModel: ObservableObject {
 
     @Published var title = "Swift shell ready"
     @Published var detail = "The menu bar shell is live. Checking the local Rust runtime and bundled helpers."
-    @Published var rustVersion = "unknown"
+    @Published var rustVersion = "—"
     @Published var runtimeBadge = "Checking"
     @Published var ffmpegLine = "ffmpeg unresolved"
     @Published var coliLine = "coli unresolved"
