@@ -16,6 +16,7 @@ final class ShellViewModel: ObservableObject {
     @Published var transcriptText = ""
     @Published var transcriptMeta = ""
     @Published var diagnosticsExpanded = false
+    @Published var isTranscribing = false
 
     var isReady: Bool {
         runtimeBadge == "Ready"
@@ -46,7 +47,7 @@ final class ShellViewModel: ObservableObject {
     }
 
     var canTranscribe: Bool {
-        !recordingPath.isEmpty && !isRecordingActive
+        !recordingPath.isEmpty && !isRecordingActive && !isTranscribing
     }
 
     var canPasteTranscript: Bool {
@@ -130,28 +131,38 @@ final class ShellViewModel: ObservableObject {
     }
 
     func transcribeLatestRecording() {
-        guard !recordingPath.isEmpty else {
-            actionError = "No completed recording available to transcribe yet."
-            return
-        }
+        guard canTranscribe else { return }
 
-        do {
-            let result = try RustCoreBridge.shared.transcribeAudio(at: recordingPath)
-            transcriptText = result.text
+        isTranscribing = true
+        actionError = ""
+        let path = recordingPath
+        let vm = self   // strong let — keeps vm alive for the duration of the task
 
-            var metaParts = [String]()
-            if let lang = result.lang, !lang.isEmpty {
-                metaParts.append("lang: \(lang)")
+        Task.detached(priority: .userInitiated) {
+            do {
+                let result = try RustCoreBridge.shared.transcribeAudio(at: path)
+                let text = result.text
+                var metaParts = [String]()
+                if let lang = result.lang, !lang.isEmpty {
+                    metaParts.append("lang: \(lang)")
+                }
+                if let duration = result.duration {
+                    metaParts.append(String(format: "audio: %.1fs", duration))
+                }
+                let meta = metaParts.joined(separator: "  |  ")
+                await MainActor.run {
+                    vm.transcriptText = text
+                    vm.transcriptMeta = meta
+                    vm.isTranscribing = false
+                    vm.actionError = ""
+                }
+            } catch {
+                let message = error.localizedDescription
+                await MainActor.run {
+                    vm.actionError = message
+                    vm.isTranscribing = false
+                }
             }
-            if let duration = result.duration {
-                metaParts.append(String(format: "audio: %.1fs", duration))
-            }
-
-            transcriptMeta = metaParts.joined(separator: "  |  ")
-            actionError = ""
-            detail = "Transcription completed. Copy it or paste it straight into the focused app."
-        } catch {
-            actionError = error.localizedDescription
         }
     }
 

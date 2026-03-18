@@ -195,7 +195,11 @@ struct ShellPanelView: View {
 
                 VStack(spacing: 10) {
                     HStack(spacing: 10) {
-                        actionButton(title: "Transcribe", systemImage: "text.bubble.fill", tint: panelAccentSoft) {
+                        actionButton(
+                            title: viewModel.isTranscribing ? "Transcribing…" : "Transcribe",
+                            systemImage: viewModel.isTranscribing ? "hourglass" : "text.bubble.fill",
+                            tint: panelAccentSoft
+                        ) {
                             viewModel.transcribeLatestRecording()
                         }
                         .disabled(!viewModel.canTranscribe)
