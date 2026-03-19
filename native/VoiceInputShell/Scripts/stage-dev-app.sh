@@ -39,8 +39,27 @@ rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$HELPERS_DIR"
 
 cp "$BUILD_DIR/VoiceInputShell" "$MACOS_DIR/VoiceInputShell"
-cp "$COLI_PATH" "$HELPERS_DIR/coli"
-chmod +x "$MACOS_DIR/VoiceInputShell" "$HELPERS_DIR/coli"
+
+# Resolve coli's real path (through symlinks) to find the package root.
+COLI_REAL="$(realpath "$COLI_PATH")"
+# cli.js lives at <pkg>/distribution/cli.js; two dirname calls reach the package root.
+COLI_PKG_DIR="$(dirname "$(dirname "$COLI_REAL")")"
+
+# Copy node binary from the same bin directory as coli (handles nvm, homebrew, etc.)
+NODE_BIN="$(dirname "$COLI_PATH")/node"
+[[ ! -f "$NODE_BIN" ]] && NODE_BIN="$(command -v node)"
+
+cp -R "$COLI_PKG_DIR" "$HELPERS_DIR/coli_pkg"
+cp "$NODE_BIN" "$HELPERS_DIR/node"
+
+# Wrapper script that invokes coli in its own package context (so node_modules resolve).
+cat > "$HELPERS_DIR/coli" <<'COLI_SH'
+#!/bin/sh
+DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$DIR/node" "$DIR/coli_pkg/distribution/cli.js" "$@"
+COLI_SH
+
+chmod +x "$MACOS_DIR/VoiceInputShell" "$HELPERS_DIR/coli" "$HELPERS_DIR/node"
 
 cat >"$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
