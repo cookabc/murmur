@@ -1,5 +1,4 @@
 # Rust
-/target/
 /voice-core/target/
 **/*.rs.bk
 *.pdb
@@ -7,26 +6,9 @@
 # macOS
 .DS_Store
 
-# Tauri
-/src-tauri/target/
-/src-tauri/Cargo.lock
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Swift
-.build/
-.stage/
+# Swift / Xcode
+native/VoiceInputShell/.build/
+native/VoiceInputShell/.stage/
 .swiftpm/
 Package.resolved
 DerivedData/
@@ -34,7 +16,7 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
 
-# Settings
+# App data
 .voice-input-mac/
 
 # Logs
