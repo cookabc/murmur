@@ -1,16 +1,23 @@
 import AppKit
 import SwiftUI
 
+// NSPanel with .nonactivatingPanel returns canBecomeKey = false by default,
+// blocking all keyboard input to SwiftUI text fields. Override explicitly.
+private final class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
 @MainActor
 final class PanelController {
-    private let panel: NSPanel
+    private let panel: KeyablePanel
     let viewModel = ShellViewModel()
 
     init() {
         let rootView = ShellPanelView(viewModel: viewModel)
         let hosting = NSHostingView(rootView: rootView)
 
-        panel = NSPanel(
+        panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: 408, height: 500),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
