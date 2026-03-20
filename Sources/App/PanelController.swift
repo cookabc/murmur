@@ -33,6 +33,11 @@ final class PanelController {
         viewModel.onRequestQuit = {
             NSApp.terminate(nil)
         }
+        viewModel.onRequestFocus = { [weak self] in
+            guard let self else { return }
+            self.panel.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     func togglePanel(relativeTo button: NSStatusBarButton?) {

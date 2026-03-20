@@ -6,6 +6,7 @@ import Foundation
 final class ShellViewModel: ObservableObject {
     var onRequestDismiss: (() -> Void)?
     var onRequestQuit: (() -> Void)?
+    var onRequestFocus: (() -> Void)?
 
     @Published var title = "Voice Input"
     @Published var detail = "Checking the dictation engine…"
@@ -228,7 +229,10 @@ final class ShellViewModel: ObservableObject {
 
     // MARK: - LLM Polish
 
-    func openSettings() { showSettings = true }
+    func openSettings() {
+        showSettings = true
+        onRequestFocus?()
+    }
     func closeSettings() { showSettings = false }
 
     func polishTranscript() {
