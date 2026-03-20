@@ -21,6 +21,8 @@ final class AudioSession {
 
     // Set before startRecording(); called from the audio tap thread for each buffer.
     var bufferSink: ((AVAudioPCMBuffer, AVAudioTime) -> Void)?
+    // Called from the tap thread with a 0–1 normalized mic level (dB-based).
+    var levelSink: ((Float) -> Void)?
 
     var recordingFormat: AVAudioFormat {
         engine.inputNode.outputFormat(forBus: 0)
@@ -43,6 +45,16 @@ final class AudioSession {
             guard let self else { return }
             try? self.audioFile?.write(from: buf)
             self.bufferSink?(buf, time)
+            // Compute RMS → dB-normalised 0–1 level and forward.
+            if let data = buf.floatChannelData?[0] {
+                let count = Int(buf.frameLength)
+                var sum: Float = 0
+                for i in 0..<count { let s = data[i]; sum += s * s }
+                let rms = count > 0 ? sqrt(sum / Float(count)) : 0
+                let db = 20.0 * log10(max(Double(rms), 1e-5))
+                let level = Float(max(0, min(1, (db + 50.0) / 50.0)))
+                self.levelSink?(level)
+            }
         }
 
         do {

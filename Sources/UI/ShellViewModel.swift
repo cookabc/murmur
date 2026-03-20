@@ -23,6 +23,7 @@ final class ShellViewModel: ObservableObject {
     @Published var polishedText = ""
     @Published var showSettings = false
     @Published var recordingElapsed = 0
+    @Published var micLevel: Float = 0
     private var audioPlayer: AVAudioPlayer?
     private var recordingTimer: Timer?
 
@@ -93,6 +94,15 @@ final class ShellViewModel: ObservableObject {
             return
         }
 
+        // Wire mic-level callback for waveform visualization (smoothed, main-actor safe).
+        core.levelCallback = { [weak self] level in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                // Fast attack, slow decay for smooth animation.
+                let alpha: Float = level > self.micLevel ? 0.7 : 0.25
+                self.micLevel = alpha * level + (1 - alpha) * self.micLevel
+            }
+        }
         // Start elapsed recording timer.
         recordingElapsed = 0
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -109,6 +119,8 @@ final class ShellViewModel: ObservableObject {
 
         recordingTimer?.invalidate()
         recordingTimer = nil
+        core.levelCallback = nil
+        micLevel = 0
         core.stopRecording()
         recordingLine = "Recorded"
         actionError = ""

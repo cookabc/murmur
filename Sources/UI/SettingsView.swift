@@ -31,6 +31,9 @@ struct SettingsView: View {
     @State private var baseURL = ""
     @State private var model = ""
     @State private var showAPIKey = false
+    @FocusState private var focusedField: Field?
+
+    private enum Field { case apiKey, baseURL, model }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -78,8 +81,10 @@ struct SettingsView: View {
                                 Group {
                                     if showAPIKey {
                                         TextField("sk-\u{2026}", text: $apiKey)
+                                            .focused($focusedField, equals: .apiKey)
                                     } else {
                                         SecureField("sk-\u{2026}", text: $apiKey)
+                                            .focused($focusedField, equals: .apiKey)
                                     }
                                 }
                                 .font(.system(size: 12, design: .monospaced))
@@ -164,6 +169,9 @@ struct SettingsView: View {
             apiKey  = LLMPolisher.shared.apiKey  ?? ""
             baseURL = LLMPolisher.shared.baseURL
             model   = LLMPolisher.shared.model
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                focusedField = .apiKey
+            }
         }
     }
 

@@ -8,6 +8,8 @@ final class VoiceCoreService {
     private let transcriber = ColiTranscriber()
 
     var isRecording: Bool { session.isRecording }
+    // Called on the audio tap thread with a 0–1 normalised mic level.
+    var levelCallback: ((Float) -> Void)?
 
     func requestPermissions() async {
         await LiveSpeechRecognizer.requestAuthorization()
@@ -22,9 +24,11 @@ final class VoiceCoreService {
         // Capture liveSpeech directly so the tap closure doesn't need to hop through
         // self (which is @MainActor-isolated).
         let ls = liveSpeech
+        let lc = levelCallback
         session.bufferSink = { buf, time in
             ls.appendBuffer(buf, at: time)
         }
+        session.levelSink = { level in lc?(level) }
         return try session.startRecording()
     }
 

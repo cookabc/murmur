@@ -53,6 +53,8 @@ struct ShellPanelView: View {
 
     var body: some View {
         ZStack {
+            // ── MAIN PANEL ──
+            ZStack {
             LinearGradient(
                 colors: [panelBackground, dark ? Color(red: 0.10, green: 0.16, blue: 0.17) : Color(red: 0.93, green: 0.94, blue: 0.93)],
                 startPoint: .topLeading,
@@ -175,10 +177,10 @@ struct ShellPanelView: View {
                         .tint(heroTint)
                         .disabled(!viewModel.canStartRecording && !viewModel.canStopRecording)
 
-                        // Recording indicator — live timer while mic is open.
+                        // Recording indicator — waveform + timer while mic is open.
                         if viewModel.isRecordingActive {
                             HStack(spacing: 12) {
-                                PulsingDot(color: panelDanger)
+                                WaveformBarsView(level: viewModel.micLevel, color: panelDanger)
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 8) {
                                         Text("Recording")
@@ -296,12 +298,6 @@ struct ShellPanelView: View {
                                     .buttonStyle(.bordered)
                                     .tint(panelAccentSoft)
 
-                                    Button("Paste") {
-                                        viewModel.pasteTranscript()
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(panelAccent)
-
                                     Spacer()
 
                                     Button {
@@ -316,6 +312,12 @@ struct ShellPanelView: View {
                                     .buttonStyle(.bordered)
                                     .tint(Color(red: 0.62, green: 0.46, blue: 0.86))
                                     .disabled(!viewModel.canPolish)
+
+                                    Button("Insert \u{2197}") {
+                                        viewModel.pasteTranscript()
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(panelAccent)
                                 }
                             }
                             .padding(16)
@@ -341,7 +343,7 @@ struct ShellPanelView: View {
                                     .buttonStyle(.bordered)
                                     .tint(panelAccentSoft)
 
-                                    Button("Paste") {
+                                    Button("Insert \u{2197}") {
                                         viewModel.pastePolished()
                                     }
                                     .buttonStyle(.borderedProminent)
@@ -390,19 +392,19 @@ struct ShellPanelView: View {
                     .background(panelSurface.opacity(0.6))
             }
         }
+
+        // ── SETTINGS PANEL (sibling in root ZStack — required for text field focus) ──
+        if viewModel.showSettings {
+            SettingsView(viewModel: viewModel)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal:   .move(edge: .trailing)
+                ))
+        }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .frame(width: 408, height: 500)
         .foregroundStyle(panelText)
-        .overlay {
-            if viewModel.showSettings {
-                SettingsView(viewModel: viewModel)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing),
-                        removal:   .move(edge: .trailing)
-                    ))
-            }
-        }
         .animation(.easeInOut(duration: 0.25), value: viewModel.showSettings)
         .onAppear {
             viewModel.refreshRuntime()
@@ -426,5 +428,24 @@ private struct PulsingDot: View {
                     scale = 0.45
                 }
             }
+    }
+}
+
+private struct WaveformBarsView: View {
+    let level: Float
+    let color: Color
+    // Mountain-shaped multipliers — center bar is tallest.
+    private let multipliers: [CGFloat] = [0.25, 0.55, 0.80, 1.0, 0.80, 0.55, 0.25]
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(multipliers.indices, id: \.self) { i in
+                Capsule()
+                    .fill(color)
+                    .frame(width: 3, height: max(4, CGFloat(level) * multipliers[i] * 44))
+                    .animation(.easeInOut(duration: 0.10), value: level)
+            }
+        }
+        .frame(width: 40, height: 44)
     }
 }
