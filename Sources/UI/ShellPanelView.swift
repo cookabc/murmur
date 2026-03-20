@@ -62,15 +62,15 @@ struct ShellPanelView: View {
             )
 
             Circle()
-                .fill(panelAccent.opacity(dark ? 0.18 : 0.12))
+                .fill(panelAccent.opacity(dark ? 0.09 : 0.06))
                 .frame(width: 220, height: 220)
-                .blur(radius: 30)
+                .blur(radius: 40)
                 .offset(x: 130, y: -170)
 
             Circle()
-                .fill(panelAccentSoft.opacity(dark ? 0.22 : 0.14))
+                .fill(panelAccentSoft.opacity(dark ? 0.11 : 0.07))
                 .frame(width: 180, height: 180)
-                .blur(radius: 24)
+                .blur(radius: 32)
                 .offset(x: -140, y: 170)
 
             VStack(spacing: 0) {
@@ -235,6 +235,10 @@ struct ShellPanelView: View {
                                             .multilineTextAlignment(.center)
                                     }
                                     .frame(maxWidth: .infinity, minHeight: 84)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .stroke((dark ? Color.white : Color.black).opacity(0.10), lineWidth: 1)
+                                    )
                                 }
                             }
                             .frame(maxWidth: .infinity, minHeight: 84)
@@ -335,6 +339,7 @@ struct ShellPanelView: View {
                                     Text("Polished")
                                         .font(.system(size: 11, weight: .bold, design: .rounded))
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .foregroundStyle(viewModel.polishedText.isEmpty
                                     ? Color(red: 0.72, green: 0.58, blue: 0.94).opacity(0.4)
                                     : Color(red: 0.72, green: 0.58, blue: 0.94))
@@ -361,6 +366,7 @@ struct ShellPanelView: View {
                                 .tint(Color(red: 0.62, green: 0.46, blue: 0.86))
                                 .disabled(viewModel.polishedText.isEmpty)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
                             .background(Color(red: 0.62, green: 0.46, blue: 0.86).opacity(dark ? 0.10 : 0.06))
                         }
