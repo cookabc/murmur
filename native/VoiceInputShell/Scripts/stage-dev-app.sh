@@ -18,7 +18,7 @@ else
 fi
 
 BUILD_DIR="$SHELL_DIR/.build/arm64-apple-macosx/$PROFILE"
-APP_DIR="$SHELL_DIR/.stage/VoiceInputShell.app"
+APP_DIR="$SHELL_DIR/.stage/Murmur.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 HELPERS_DIR="$CONTENTS_DIR/Helpers"
@@ -38,7 +38,7 @@ popd >/dev/null
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$HELPERS_DIR"
 
-cp "$BUILD_DIR/VoiceInputShell" "$MACOS_DIR/VoiceInputShell"
+cp "$BUILD_DIR/Murmur" "$MACOS_DIR/Murmur"
 
 # Resolve coli's real path (through symlinks) to find the package root.
 COLI_REAL="$(realpath "$COLI_PATH")"
@@ -59,7 +59,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 exec "$DIR/node" "$DIR/coli_pkg/distribution/cli.js" "$@"
 COLI_SH
 
-chmod +x "$MACOS_DIR/VoiceInputShell" "$HELPERS_DIR/coli" "$HELPERS_DIR/node"
+chmod +x "$MACOS_DIR/Murmur" "$HELPERS_DIR/coli" "$HELPERS_DIR/node"
 
 cat >"$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -69,13 +69,13 @@ cat >"$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleExecutable</key>
-  <string>VoiceInputShell</string>
+  <string>Murmur</string>
   <key>CFBundleIdentifier</key>
-  <string>com.advance.voiceinputshell.dev</string>
+  <string>com.advance.murmur.dev</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>VoiceInputShell</string>
+  <string>Murmur</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -85,9 +85,9 @@ cat >"$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>LSUIElement</key>
   <true/>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Voice Input needs microphone access to record audio for transcription.</string>
+  <string>Murmur needs microphone access to record audio for transcription.</string>
   <key>NSSpeechRecognitionUsageDescription</key>
-  <string>Voice Input uses on-device speech recognition to show a live preview while you dictate.</string>
+  <string>Murmur uses on-device speech recognition to show a live preview while you dictate.</string>
 </dict>
 </plist>
 PLIST

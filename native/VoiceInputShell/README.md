@@ -1,50 +1,59 @@
-# VoiceInputShell
+# Murmur — native macOS shell
 
-This is the first native macOS shell scaffold for Voice Input.
+Swift Package that builds the `Murmur.app` menu bar binary.
 
-Current scope:
+## Source layout
 
-- Creates a menu bar status item using AppKit.
-- Differentiates left click for toggling the panel and right click for showing the menu.
-- Uses a floating native panel instead of the old Tauri window.
-- Loads the Rust core dynamically and performs a smoke check for bundled `ffmpeg` and `coli` paths.
-
-Current development workflow:
-
-```bash
-cd voice-core && cargo build
-cd ../native/VoiceInputShell && swift build
-swift run
+```
+Sources/VoiceInputShell/
+├── App/
+│   ├── VoiceInputShellApp.swift    — @main entry, NSApplicationDelegate
+│   ├── StatusItemController.swift  — NSStatusItem, recording icon animation
+│   └── PanelController.swift       — floating NSPanel lifecycle
+├── Engine/
+│   ├── AudioSession.swift          — AVAudioEngine PCM recording → /tmp/voice_<ts>.wav
+│   ├── LiveSpeechRecognizer.swift  — parallel SFSpeechRecognizer (zh-CN, zh-TW, en-US)
+│   ├── ColiTranscriber.swift       — actor subprocess: coli asr → TranscriptionResult
+│   ├── LLMPolisher.swift           — actor: OpenAI-compatible grammar/punctuation polish
+│   └── VoiceCoreService.swift      — @MainActor façade wiring the above together
+├── Support/
+│   ├── AppPaths.swift              — coli binary resolution (bundle → env → Homebrew)
+│   └── TextInsertionService.swift  — clipboard copy + CGEvent ⌘V paste
+└── UI/
+    ├── ShellViewModel.swift        — @MainActor ObservableObject state machine
+    └── ShellPanelView.swift        — SwiftUI panel (408 × 500, dark/light adaptive)
 ```
 
-Development app bundle staging:
+## Development workflow
 
 ```bash
-cd native/VoiceInputShell
-./Scripts/stage-dev-app.sh
-open .stage/VoiceInputShell.app
-```
-
-Canonical development launch:
-
-```bash
-cd native/VoiceInputShell
+# Rebuild, stage, and launch (preferred)
 ./Scripts/run-dev-app.sh
+
+# Stage only
+./Scripts/stage-dev-app.sh [--release]
+
+# Manual build
+swift build
 ```
 
-This is the preferred way to test the native shell during development because it always rebuilds the staged bundle and launches the bundle layout the app will use in distribution.
+## Bundle layout
 
-Optional overrides:
+```
+Murmur.app/
+└── Contents/
+    ├── MacOS/
+    │   └── Murmur              (Swift executable)
+    ├── Helpers/
+    │   ├── coli                (shell wrapper → node coli_pkg/distribution/cli.js)
+    │   ├── coli_pkg/           (full @marswave/coli node package with node_modules)
+    │   └── node                (node binary, resolved from same dir as coli)
+    └── Info.plist
+```
 
-- `VOICE_INPUT_FFMPEG_PATH=/absolute/path/to/ffmpeg`
-- `VOICE_INPUT_COLI_PATH=/absolute/path/to/coli`
+## Environment overrides
 
-The current shell expects the final bundled app layout to provide:
-
-- `Contents/Frameworks/libvoice_input_core.dylib`
-- `Contents/Helpers/ffmpeg`
-- `Contents/Helpers/coli`
-
-During local development, it falls back to the Rust core debug dylib and `/usr/local/bin/<tool>` helper locations.
-
-The staging script above assembles that same layout under `.stage/VoiceInputShell.app` so the native shell can be exercised against bundled helpers instead of development fallbacks.
+| Variable | Purpose |
+|---|---|
+| `VOICE_INPUT_HELPERS_DIR` | Override the helpers directory at runtime |
+| `VOICE_INPUT_COLI_PATH`   | Override the coli binary path used at staging time |

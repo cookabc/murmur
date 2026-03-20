@@ -2,16 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "VoiceInputShell",
+    name: "Murmur",
     platforms: [
         .macOS(.v14),
     ],
     products: [
-        .executable(name: "VoiceInputShell", targets: ["VoiceInputShell"]),
+        .executable(name: "Murmur", targets: ["Murmur"]),
     ],
     targets: [
         .executableTarget(
-            name: "VoiceInputShell",
+            name: "Murmur",
             path: "Sources",
             linkerSettings: [
                 .linkedFramework("Speech"),
