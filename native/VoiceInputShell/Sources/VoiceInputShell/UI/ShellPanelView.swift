@@ -156,21 +156,30 @@ struct ShellPanelView: View {
                         .tint(heroTint)
                         .disabled(!viewModel.canStartRecording && !viewModel.canStopRecording)
 
-                        if viewModel.isRecordingActive && !viewModel.liveTranscript.isEmpty {
+                        // Show live card while recording OR while transcribing (coli running).
+                        // It disappears only when the final transcriptText replaces it.
+                        if !viewModel.liveTranscript.isEmpty && viewModel.transcriptText.isEmpty {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Live")
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                                    .foregroundStyle(panelDanger.opacity(0.8))
+                                HStack(spacing: 6) {
+                                    Text(viewModel.isRecordingActive ? "Live" : "Processing")
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .foregroundStyle(viewModel.isRecordingActive ? panelDanger.opacity(0.8) : panelMuted)
+                                    if viewModel.isTranscribing {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                            .frame(width: 14, height: 14)
+                                    }
+                                }
                                 Text(viewModel.liveTranscript)
                                     .font(.system(size: 14, weight: .medium, design: .rounded))
                                     .foregroundStyle(panelText.opacity(0.85))
                                     .italic()
-                                Text("Listening\u{2026}")
+                                Text(viewModel.isRecordingActive ? "Listening\u{2026}" : "Transcribing with coli\u{2026}")
                                     .font(.system(size: 11, weight: .medium, design: .rounded))
                                     .foregroundStyle(panelMuted)
                             }
                             .padding(14)
-                            .background(panelDanger.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .background(panelDanger.opacity(viewModel.isRecordingActive ? 0.08 : 0.04), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             .transition(.opacity.combined(with: .scale(scale: 0.97)))
                         }
 
