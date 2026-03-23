@@ -115,6 +115,31 @@ struct ShellPanelView: View {
                             .background(badgeTint.opacity(0.18), in: Capsule())
                     }
 
+                    // ── AUTO-FLOW BUTTON ──
+                    Button {
+                        viewModel.handleHotkey()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: viewModel.isRecordingActive ? "stop.circle.fill" : "waveform")
+                                .font(.system(size: 11, weight: .bold))
+                            if !viewModel.isRecordingActive {
+                                Text("Auto")
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                            }
+                        }
+                        .foregroundStyle(viewModel.isRecordingActive ? panelDanger : panelAccent)
+                        .padding(.horizontal, viewModel.isRecordingActive ? 8 : 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            (viewModel.isRecordingActive ? panelDanger : panelAccent).opacity(0.15),
+                            in: Capsule()
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.isReady && !viewModel.isRecordingActive)
+                    .help(viewModel.isRecordingActive ? "Stop & paste" : "Record → polish → paste")
+                    .animation(.easeInOut(duration: 0.15), value: viewModel.isRecordingActive)
+
                     Button {
                         viewModel.openSettings()
                     } label: {
