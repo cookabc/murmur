@@ -117,7 +117,7 @@ struct ShellPanelView: View {
 
                     // ── AUTO-FLOW BUTTON ──
                     Button {
-                        viewModel.handleHotkey()
+                        viewModel.togglePanelAutoFlow()
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: viewModel.isRecordingActive ? "stop.circle.fill" : "waveform")

@@ -48,14 +48,25 @@ final class ShellViewModel: ObservableObject {
     // MARK: - Hotkey / Auto-flow
 
     /// Called by `HotkeyManager` each time the global shortcut fires.
-    /// First press → start recording; second press → stop + chain polish → paste.
+    /// First press → start recording in compact pill; second press → stop.
     func handleHotkey() {
         if isRecordingActive {
-            // Second press: stop and let the auto-chain do the rest.
             stopRecording()
         } else if canStartRecording {
             isAutoFlow = true
             compactMode = true
+            autoFlowStatus = "Listening…"
+            startRecording()
+        }
+    }
+
+    /// Called by the in-panel Auto button — stays in the full panel, no compact pill.
+    func togglePanelAutoFlow() {
+        if isRecordingActive {
+            stopRecording()
+        } else if canStartRecording {
+            isAutoFlow = true
+            // Do NOT set compactMode — keep the full panel open so stop is accessible.
             autoFlowStatus = "Listening…"
             startRecording()
         }
@@ -225,9 +236,12 @@ final class ShellViewModel: ObservableObject {
                     vm.transcriptMeta = meta
                     vm.isTranscribing = false
                     vm.actionError = ""
-                    // Auto-flow: chain straight to polish if API key present, else paste raw.
+                    // Auto-flow: chain straight to polish if transcript has real content.
                     if vm.isAutoFlow {
-                        if LLMPolisher.shared.apiKey != nil && !text.isEmpty {
+                        // Require at least 4 words to justify an LLM call.
+                        let wordCount = text.split(whereSeparator: \.isWhitespace).count
+                        let hasContent = wordCount >= 4
+                        if LLMPolisher.shared.apiKey != nil && hasContent {
                             vm.autoFlowStatus = "Polishing…"
                             vm.polishTranscript()
                         } else {
