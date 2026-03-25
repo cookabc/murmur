@@ -192,6 +192,48 @@ struct ShellPanelView: View {
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                         }
 
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                Image(systemName: viewModel.llmHint.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(viewModel.llmHint.isEmpty ? Color.green.opacity(0.8) : Color.orange.opacity(0.9))
+                                Text("LLM Runtime")
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(panelMuted)
+                                Spacer()
+                                Button("Refresh") {
+                                    Task { @MainActor in
+                                        await viewModel.refreshLLMRuntime()
+                                    }
+                                }
+                                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                .buttonStyle(.plain)
+                                .foregroundStyle(panelAccent)
+
+                                if !viewModel.llmHint.isEmpty {
+                                    Button("Fix") {
+                                        viewModel.openSettings()
+                                    }
+                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                    .buttonStyle(.plain)
+                                    .foregroundStyle(panelAccentSoft)
+                                }
+                            }
+
+                            Text(viewModel.llmLine)
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(panelText)
+
+                            if !viewModel.llmHint.isEmpty {
+                                Text(viewModel.llmHint)
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(panelMuted)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(panelSurface.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
                         // ── Unified Record / Clip card ──
                         ZStack {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
