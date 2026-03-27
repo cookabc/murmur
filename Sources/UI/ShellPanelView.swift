@@ -91,17 +91,6 @@ struct ShellPanelView: View {
                         Text("Dictate & polish")
                             .font(.system(size: 11, weight: .medium, design: .rounded))
                             .foregroundStyle(panelMuted)
-                        // Hotkey hint
-                        if !viewModel.hotkeyDisplayString.isEmpty {
-                            HStack(spacing: 4) {
-                                Text(viewModel.hotkeyDisplayString)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(panelAccent)
-                                Text("auto-flow")
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                                    .foregroundStyle(panelMuted)
-                            }
-                        }
                     }
 
                     Spacer()
@@ -137,7 +126,11 @@ struct ShellPanelView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!viewModel.isReady && !viewModel.isRecordingActive)
-                    .help(viewModel.isRecordingActive ? "Stop & paste" : "Record → polish → paste")
+                    .help(viewModel.isRecordingActive
+                          ? "Stop & paste"
+                          : viewModel.hotkeyDisplayString.isEmpty
+                            ? "Record \u{2192} polish \u{2192} paste"
+                            : "\(viewModel.hotkeyDisplayString)  Record \u{2192} polish \u{2192} paste")
                     .animation(.easeInOut(duration: 0.15), value: viewModel.isRecordingActive)
 
                     Button {
@@ -388,41 +381,52 @@ struct ShellPanelView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                             } else if !viewModel.recordingPath.isEmpty {
-                                // ── Clip ready ──
-                                HStack(spacing: 14) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(spacing: 5) {
-                                            Image(systemName: "waveform")
-                                                .font(.system(size: 11, weight: .semibold))
-                                                .foregroundStyle(panelAccentSoft)
-                                            Text("Clip ready")
-                                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                                .foregroundStyle(panelText)
-                                        }
-                                        Button {
-                                            viewModel.toggleClipPlayback()
-                                        } label: {
-                                            Label(viewModel.isPlayingClip ? "Stop" : "Play",
-                                                  systemImage: viewModel.isPlayingClip ? "stop.fill" : "play.fill")
-                                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                        }
-                                        .buttonStyle(.bordered)
-                                        .tint(panelAccentSoft)
-                                    }
-                                    Spacer()
+                                // ── Clip ready: Record (left) + Play (right) ──
+                                HStack(spacing: 0) {
+                                    // Record button — full left half
                                     Button {
                                         viewModel.startRecording()
                                     } label: {
-                                        Label("Record", systemImage: "mic.fill")
-                                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        VStack(spacing: 6) {
+                                            Image(systemName: "mic.fill")
+                                                .font(.system(size: 22, weight: .bold))
+                                                .foregroundStyle(heroTint)
+                                            Text("Record")
+                                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                .foregroundStyle(panelText)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .contentShape(Rectangle())
                                     }
-                                    .buttonStyle(.bordered)
-                                    .tint(heroTint)
+                                    .buttonStyle(.plain)
                                     .disabled(!viewModel.canStartRecording)
+
+                                    // Divider
+                                    Rectangle()
+                                        .fill(panelMuted.opacity(0.18))
+                                        .frame(width: 1)
+                                        .padding(.vertical, 12)
+
+                                    // Play button — full right half
+                                    Button {
+                                        viewModel.toggleClipPlayback()
+                                    } label: {
+                                        VStack(spacing: 6) {
+                                            Image(systemName: viewModel.isPlayingClip ? "stop.fill" : "play.fill")
+                                                .font(.system(size: 22, weight: .bold))
+                                                .foregroundStyle(panelAccentSoft)
+                                            Text(viewModel.isPlayingClip ? "Stop" : "Play")
+                                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                .foregroundStyle(panelText)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
                             } else {
                                 // ── Idle ──
                                 Button {

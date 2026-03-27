@@ -283,7 +283,7 @@ final class ShellViewModel: ObservableObject {
         micLevel = 0
         core.stopRecording()
         recordingLine = "Recorded"
-        setFlowStage(.transcribing, line: "Processing recording")
+
         clearActionError()
         if isAutoFlow { autoFlowStatus = "Transcribing…" }
         transcribeLatestRecording()
