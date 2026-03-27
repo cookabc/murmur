@@ -175,6 +175,7 @@ struct SettingsView: View {
                                     .foregroundStyle(textColor)
                                 Spacer()
                                 Button("Refresh") {
+                                    save()
                                     Task { @MainActor in
                                         await viewModel.refreshLLMRuntime()
                                     }

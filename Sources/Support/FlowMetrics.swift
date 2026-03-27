@@ -38,6 +38,11 @@ final class FlowMetrics: ObservableObject {
     func beginStage(_ name: String) {
         // End any in-progress stage first.
         endCurrentStage(outcome: .success)
+        // Replace previous stage with same name if it failed (retry scenario).
+        if let lastIdx = stages.lastIndex(where: { $0.stage == name }),
+           stages[lastIdx].outcome == .failure {
+            stages.remove(at: lastIdx)
+        }
         stages.append(StageRecord(stage: name, startedAt: Date()))
     }
 

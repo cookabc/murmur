@@ -9,9 +9,19 @@ enum LLMPolisherError: Error, LocalizedError {
         switch self {
         case .noApiKey:
             return "No API key saved. Open Settings to enter your API key, or use a local endpoint that does not require one."
-        case .httpError(let code, let body, let url):
-            let snippet = body.isEmpty ? "(empty)" : String(body.prefix(200))
-            return "LLM API \(code) — \(url)\n\(snippet)"
+        case .httpError(let code, _, _):
+            switch code {
+            case 401:
+                return "API key invalid or expired (HTTP 401). Check your key in Settings."
+            case 403:
+                return "Access denied (HTTP 403). Your API key may lack permission for this model."
+            case 429:
+                return "Rate limited (HTTP 429). Wait a moment and try again."
+            case 500...599:
+                return "Server error (HTTP \(code)). The API endpoint may be temporarily unavailable."
+            default:
+                return "LLM request failed (HTTP \(code)). Check your Base URL and model in Settings."
+            }
         case .unexpectedResponse:
             return "Unexpected response from LLM API."
         }
