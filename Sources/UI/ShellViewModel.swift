@@ -116,18 +116,6 @@ final class ShellViewModel: ObservableObject {
         }
     }
 
-    /// Called by the in-panel Auto button — stays in the full panel, no compact pill.
-    func togglePanelAutoFlow() {
-        if isRecordingActive {
-            stopRecording()
-        } else if canStartRecording {
-            isAutoFlow = true
-            // Do NOT set compactMode — keep the full panel open so stop is accessible.
-            autoFlowStatus = "Listening…"
-            startRecording()
-        }
-    }
-
     private func finishAutoFlow(text: String) {
         guard !text.isEmpty else {
             isAutoFlow = false
@@ -329,18 +317,15 @@ final class ShellViewModel: ObservableObject {
                     vm.isTranscribing = false
                     vm.setFlowStage(.readyToPaste, line: "Transcript ready")
                     vm.clearActionError()
-                    // Auto-flow: chain straight to polish if transcript has real content.
-                    if vm.isAutoFlow {
-                        // Require at least 4 words to justify an LLM call.
-                        let wordCount = text.split(whereSeparator: \.isWhitespace).count
-                        let hasContent = wordCount >= 4
-                        let canPolishLocally = !LLMPolisher.shared.requiresAPIKey || LLMPolisher.shared.apiKey != nil
-                        if canPolishLocally && hasContent {
-                            vm.autoFlowStatus = "Polishing…"
-                            vm.polishTranscript()
-                        } else {
-                            vm.finishAutoFlow(text: text)
-                        }
+                    // Always auto-polish if transcript has real content.
+                    let wordCount = text.split(whereSeparator: \.isWhitespace).count
+                    let hasContent = wordCount >= 4
+                    let canPolishLocally = !LLMPolisher.shared.requiresAPIKey || LLMPolisher.shared.apiKey != nil
+                    if canPolishLocally && hasContent {
+                        if vm.isAutoFlow { vm.autoFlowStatus = "Polishing…" }
+                        vm.polishTranscript()
+                    } else if vm.isAutoFlow {
+                        vm.finishAutoFlow(text: text)
                     }
                 }
             } catch {
