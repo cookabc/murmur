@@ -137,6 +137,14 @@ final class ShellViewModel: ObservableObject {
             return
         }
 
+        // Panel auto-flow (not compact): just show result, let user review & paste manually.
+        guard compactMode else {
+            isAutoFlow = false
+            setFlowStage(.readyToPaste, line: "Auto-flow done — review below")
+            return
+        }
+
+        // Compact/hotkey auto-flow: copy → paste → dismiss pill.
         TextInsertionService.copyToClipboard(text)
 
         guard TextInsertionService.isAccessibilityTrusted() else {
@@ -340,6 +348,10 @@ final class ShellViewModel: ObservableObject {
                 await MainActor.run {
                     vm.setActionError(message, recoveryActions: [.retryTranscribe])
                     vm.isTranscribing = false
+                    if vm.isAutoFlow {
+                        vm.isAutoFlow = false
+                        vm.compactMode = false
+                    }
                 }
             }
         }
@@ -499,6 +511,10 @@ final class ShellViewModel: ObservableObject {
                             vm.showSettings = true
                             vm.llmLine = probe.line
                             vm.llmHint = probe.actionHint ?? ""
+                            if vm.isAutoFlow {
+                                vm.isAutoFlow = false
+                                vm.compactMode = false
+                            }
                         }
                         return
                     }
@@ -517,6 +533,10 @@ final class ShellViewModel: ObservableObject {
                 await MainActor.run {
                     vm.setActionError(error.localizedDescription, recoveryActions: [.retryPolish])
                     vm.isPolishing = false
+                    if vm.isAutoFlow {
+                        vm.isAutoFlow = false
+                        vm.compactMode = false
+                    }
                 }
             }
         }
